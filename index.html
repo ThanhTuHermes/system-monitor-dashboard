@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>System Monitor Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0f1117;
+    --card: #1a1d27;
+    --card-border: #2a2d3a;
+    --text: #e2e8f0;
+    --text-dim: #8892a4;
+    --accent: #6366f1;
+    --green: #22c55e;
+    --yellow: #eab308;
+    --red: #ef4444;
+    --blue: #3b82f6;
+    --purple: #a855f7;
+    --cyan: #06b6d4;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    min-height: 100vh;
+  }
+  .header {
+    background: var(--card);
+    border-bottom: 1px solid var(--card-border);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header h1 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .header h1 .dot {
+    width: 10px; height: 10px;
+    background: var(--green);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+  .header .uptime {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+  }
+  .container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 24px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-bottom: 24px;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .card-title {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .metric-big {
+    font-size: 2.5rem;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .metric-sub {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+  }
+  .progress-bar {
+    height: 8px;
+    background: var(--card-border);
+    border-radius: 4px;
+    margin-top: 12px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.5s ease, background 0.5s ease;
+  }
+  .chart-container {
+    position: relative;
+    height: 200px;
+  }
+  .chart-container.tall {
+    height: 260px;
+  }
+  .disk-list, .net-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .disk-item, .net-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .disk-label, .net-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+  }
+  .disk-label .mp {
+    color: var(--text-dim);
+    font-size: 0.75rem;
+  }
+  .net-label .iface {
+    font-weight: 500;
+  }
+  .net-label .ips {
+    color: var(--text-dim);
+    font-size: 0.75rem;
+  }
+  .net-bytes {
+    display: flex;
+    gap: 16px;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+  }
+  .net-bytes .sent { color: var(--blue); }
+  .net-bytes .recv { color: var(--green); }
+  .cpu-cores {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .core-item {
+    text-align: center;
+    padding: 6px 4px;
+    background: var(--bg);
+    border-radius: 6px;
+    font-size: 0.75rem;
+  }
+  .core-item .core-pct {
+    font-weight: 600;
+    font-size: 0.85rem;
+  }
+  .core-item .core-label {
+    color: var(--text-dim);
+    font-size: 0.65rem;
+  }
+  .status-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--card-border);
+    font-size: 0.85rem;
+  }
+  .status-row:last-child { border-bottom: none; }
+  .status-row .label { color: var(--text-dim); }
+  .status-row .value { font-weight: 500; }
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  @media (max-width: 768px) {
+    .two-col { grid-template-columns: 1fr; }
+    .grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1><span class="dot"></span> System Monitor</h1>
+  <div class="uptime" id="uptime">Uptime: --</div>
+</div>
+
+<div class="container">
+
+  <!-- CPU + Memory top row -->
+  <div class="grid">
+    <!-- CPU -->
+    <div class="card">
+      <div class="card-title">🖥️ CPU Usage</div>
+      <div class="metric-big" id="cpu-pct" style="color:var(--accent)">--%</div>
+      <div class="metric-sub" id="cpu-sub">-- cores · -- MHz · Load: --</div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="cpu-bar" style="width:0%;background:var(--accent)"></div>
+      </div>
+      <div class="cpu-cores" id="cpu-cores"></div>
+    </div>
+
+    <!-- Memory -->
+    <div class="card">
+      <div class="card-title">🧠 Memory</div>
+      <div class="metric-big" id="mem-pct" style="color:var(--purple)">--%</div>
+      <div class="metric-sub" id="mem-sub">-- / -- used</div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="mem-bar" style="width:0%;background:var(--purple)"></div>
+      </div>
+      <div style="margin-top:16px">
+        <div class="status-row">
+          <span class="label">Swap</span>
+          <span class="value" id="swap-val">--%</span>
+        </div>
+        <div class="status-row">
+          <span class="label">Available</span>
+          <span class="value" id="mem-avail">--</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Disk -->
+    <div class="card">
+      <div class="card-title">💾 Disk</div>
+      <div class="disk-list" id="disk-list"></div>
+    </div>
+
+    <!-- Network -->
+    <div class="card">
+      <div class="card-title">🌐 Network</div>
+      <div class="net-list" id="net-list"></div>
+    </div>
+  </div>
+
+  <!-- Charts row -->
+  <div class="two-col">
+    <div class="card">
+      <div class="card-title">📊 CPU & Memory History</div>
+      <div class="chart-container tall">
+        <canvas id="historyChart"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">📈 Network I/O (bytes/s)</div>
+      <div class="chart-container tall">
+        <canvas id="netChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- System info -->
+  <div class="card" style="margin-top:20px">
+    <div class="card-title">⚙️ System Info</div>
+    <div class="two-col" style="gap:40px">
+      <div>
+        <div class="status-row"><span class="label">Boot Time</span><span class="value" id="boot-time">--</span></div>
+        <div class="status-row"><span class="label">Processes</span><span class="value" id="proc-count">--</span></div>
+        <div class="status-row"><span class="label">CPU Model</span><span class="value" id="cpu-model">--</span></div>
+      </div>
+      <div>
+        <div class="status-row"><span class="label">CPU User</span><span class="value" id="cpu-user">--%</span></div>
+        <div class="status-row"><span class="label">CPU System</span><span class="value" id="cpu-sys">--%</span></div>
+        <div class="status-row"><span class="label">CPU IOWait</span><span class="value" id="cpu-io">--%</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function fmtBytes(b) {
+  if (b === 0) return "0 B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB", "TB"];
+  const i = Math.floor(Math.log(b) / Math.log(k));
+  return parseFloat((b / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
+}
+
+function fmtUptime(sec) {
+  const d = Math.floor(sec / 86400);
+  const h = Math.floor((sec % 86400) / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const parts = [];
+  if (d > 0) parts.push(d + "d");
+  if (h > 0) parts.push(h + "h");
+  parts.push(m + "m");
+  return parts.join(" ");
+}
+
+function pctColor(pct) {
+  if (pct < 50) return "#22c55e";
+  if (pct < 80) return "#eab308";
+  return "#ef4444";
+}
+
+// ── Charts ───────────────────────────────────────────────────────────────────
+
+const MAX_POINTS = 60; // last 60 seconds
+
+const historyCtx = document.getElementById("historyChart").getContext("2d");
+const historyChart = new Chart(historyCtx, {
+  type: "line",
+  data: {
+    labels: [],
+    datasets: [
+      {
+        label: "CPU %",
+        data: [],
+        borderColor: "#6366f1",
+        backgroundColor: "rgba(99,102,241,0.1)",
+        fill: true,
+        tension: 0.3,
+        pointRadius: 0,
+        borderWidth: 2,
+      },
+      {
+        label: "Memory %",
+        data: [],
+        borderColor: "#a855f7",
+        backgroundColor: "rgba(168,85,247,0.1)",
+        fill: true,
+        tension: 0.3,
+        pointRadius: 0,
+        borderWidth: 2,
+      },
+    ],
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: false,
+    plugins: {
+      legend: { labels: { color: "#8892a4", font: { size: 11 } } },
+    },
+    scales: {
+      x: { display: false },
+      y: {
+        min: 0,
+        max: 100,
+        grid: { color: "rgba(255,255,255,0.05)" },
+        ticks: { color: "#8892a4", font: { size: 10 } },
+      },
+    },
+  },
+});
+
+const netCtx = document.getElementById("netChart").getContext("2d");
+const netChart = new Chart(netCtx, {
+  type: "line",
+  data: {
+    labels: [],
+    datasets: [
+      {
+        label: "Sent (B/s)",
+        data: [],
+        borderColor: "#3b82f6",
+        backgroundColor: "rgba(59,130,246,0.1)",
+        fill: true,
+        tension: 0.3,
+        pointRadius: 0,
+        borderWidth: 2,
+      },
+      {
+        label: "Recv (B/s)",
+        data: [],
+        borderColor: "#22c55e",
+        backgroundColor: "rgba(34,197,94,0.1)",
+        fill: true,
+        tension: 0.3,
+        pointRadius: 0,
+        borderWidth: 2,
+      },
+    ],
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: false,
+    plugins: {
+      legend: { labels: { color: "#8892a4", font: { size: 11 } } },
+    },
+    scales: {
+      x: { display: false },
+      y: {
+        min: 0,
+        grid: { color: "rgba(255,255,255,0.05)" },
+        ticks: {
+          color: "#8892a4",
+          font: { size: 10 },
+          callback: (v) => fmtBytes(v) + "/s",
+        },
+      },
+    },
+  },
+});
+
+// ── State ────────────────────────────────────────────────────────────────────
+
+let prevNetSent = 0;
+let prevNetRecv = 0;
+let firstNet = true;
+
+// ── Update ───────────────────────────────────────────────────────────────────
+
+function update(data) {
+  const cpu = data.cpu;
+  const mem = data.memory;
+  const disk = data.disk;
+  const net = data.network;
+  const sys = data.system;
+
+  // CPU
+  document.getElementById("cpu-pct").textContent = cpu.percent.toFixed(1) + "%";
+  document.getElementById("cpu-pct").style.color = pctColor(cpu.percent);
+  document.getElementById("cpu-sub").textContent =
+    `${cpu.count} cores · ${cpu.freq_current.toFixed(0)} MHz · Load: ${cpu.load_avg_1m.toFixed(2)} / ${cpu.load_avg_5m.toFixed(2)} / ${cpu.load_avg_15m.toFixed(2)}`;
+  const cpuBar = document.getElementById("cpu-bar");
+  cpuBar.style.width = cpu.percent + "%";
+  cpuBar.style.background = pctColor(cpu.percent);
+
+  // Per-core
+  const coresEl = document.getElementById("cpu-cores");
+  coresEl.innerHTML = cpu.per_cpu.map((p, i) =>
+    `<div class="core-item">
+      <div class="core-pct" style="color:${pctColor(p)}">${p.toFixed(0)}%</div>
+      <div class="core-label">CPU ${i}</div>
+    </div>`
+  ).join("");
+
+  // Memory
+  document.getElementById("mem-pct").textContent = mem.percent.toFixed(1) + "%";
+  document.getElementById("mem-pct").style.color = pctColor(mem.percent);
+  document.getElementById("mem-sub").textContent =
+    `${fmtBytes(mem.used)} / ${fmtBytes(mem.total)} used`;
+  const memBar = document.getElementById("mem-bar");
+  memBar.style.width = mem.percent + "%";
+  memBar.style.background = pctColor(mem.percent);
+  document.getElementById("swap-val").textContent = mem.swap_percent.toFixed(1) + "% (" + fmtBytes(mem.swap_used) + ")";
+  document.getElementById("mem-avail").textContent = fmtBytes(mem.available);
+
+  // Disk
+  document.getElementById("disk-list").innerHTML = disk.partitions.map(p => `
+    <div class="disk-item">
+      <div class="disk-label">
+        <span>${p.device}</span>
+        <span class="mp">${p.mountpoint} · ${p.percent}%</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width:${p.percent}%;background:${pctColor(p.percent)}"></div>
+      </div>
+      <div class="metric-sub">${fmtBytes(p.used)} / ${fmtBytes(p.total)} · Free: ${fmtBytes(p.free)}</div>
+    </div>
+  `).join("");
+
+  // Network
+  document.getElementById("net-list").innerHTML = Object.entries(net.interfaces).map(([iface, info]) => `
+    <div class="net-item">
+      <div class="net-label">
+        <span class="iface">${iface}</span>
+        <span class="ips">${info.ips.join(", ") || "no IP"}</span>
+      </div>
+      <div class="net-bytes">
+        <span class="sent">↑ ${fmtBytes(info.bytes_sent)}</span>
+        <span class="recv">↓ ${fmtBytes(info.bytes_recv)}</span>
+      </div>
+    </div>
+  `).join("");
+
+  // System
+  document.getElementById("uptime").textContent = "Uptime: " + fmtUptime(sys.uptime_seconds);
+  document.getElementById("boot-time").textContent = new Date(sys.boot_time).toLocaleString();
+  document.getElementById("proc-count").textContent = sys.process_count;
+  document.getElementById("cpu-user").textContent = cpu.times.user.toFixed(1) + "%";
+  document.getElementById("cpu-sys").textContent = cpu.times.system.toFixed(1) + "%";
+  document.getElementById("cpu-io").textContent = cpu.times.iowait.toFixed(1) + "%";
+
+  // History chart
+  const now = new Date().toLocaleTimeString();
+  historyChart.data.labels.push(now);
+  historyChart.data.datasets[0].data.push(cpu.percent);
+  historyChart.data.datasets[1].data.push(mem.percent);
+  if (historyChart.data.labels.length > MAX_POINTS) {
+    historyChart.data.labels.shift();
+    historyChart.data.datasets.forEach(d => d.data.shift());
+  }
+  historyChart.update("none");
+
+  // Network chart (rate)
+  if (!firstNet) {
+    const sentRate = Math.max(0, net.total_sent - prevNetSent);
+    const recvRate = Math.max(0, net.total_recv - prevNetRecv);
+    netChart.data.labels.push(now);
+    netChart.data.datasets[0].data.push(sentRate);
+    netChart.data.datasets[1].data.push(recvRate);
+    if (netChart.data.labels.length > MAX_POINTS) {
+      netChart.data.labels.shift();
+      netChart.data.datasets.forEach(d => d.data.shift());
+    }
+    netChart.update("none");
+  }
+  prevNetSent = net.total_sent;
+  prevNetRecv = net.total_recv;
+  firstNet = false;
+}
+
+// ── Polling ──────────────────────────────────────────────────────────────────
+
+async function fetchMetrics() {
+  try {
+    const res = await fetch("/api/metrics");
+    const data = await res.json();
+    update(data);
+  } catch (e) {
+    console.error("Fetch error:", e);
+  }
+}
+
+fetchMetrics();
+setInterval(fetchMetrics, 1000);
+</script>
+</body>
+</html>
