@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>System Monitor Dashboard</title>
+<title>Dashboard Giám Sát Hệ Thống</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
   :root {
@@ -194,30 +194,29 @@
 <body>
 
 <div class="header">
-  <h1><span class="dot"></span> System Monitor</h1>
-  <div class="uptime" id="uptime">Uptime: --</div>
+  <h1><span class="dot"></span> Giám Sát Hệ Thống</h1>
+  <div class="uptime" id="uptime">Thời gian chạy: --</div>
 </div>
 
 <div class="container">
 
-  <!-- CPU + Memory top row -->
   <div class="grid">
     <!-- CPU -->
     <div class="card">
-      <div class="card-title">🖥️ CPU Usage</div>
+      <div class="card-title">🖥️ CPU</div>
       <div class="metric-big" id="cpu-pct" style="color:var(--accent)">--%</div>
-      <div class="metric-sub" id="cpu-sub">-- cores · -- MHz · Load: --</div>
+      <div class="metric-sub" id="cpu-sub">-- nhân · -- MHz · Tải: --</div>
       <div class="progress-bar">
         <div class="progress-fill" id="cpu-bar" style="width:0%;background:var(--accent)"></div>
       </div>
       <div class="cpu-cores" id="cpu-cores"></div>
     </div>
 
-    <!-- Memory -->
+    <!-- RAM -->
     <div class="card">
-      <div class="card-title">🧠 Memory</div>
+      <div class="card-title">🧠 RAM</div>
       <div class="metric-big" id="mem-pct" style="color:var(--purple)">--%</div>
-      <div class="metric-sub" id="mem-sub">-- / -- used</div>
+      <div class="metric-sub" id="mem-sub">-- / -- đã dùng</div>
       <div class="progress-bar">
         <div class="progress-fill" id="mem-bar" style="width:0%;background:var(--purple)"></div>
       </div>
@@ -227,61 +226,121 @@
           <span class="value" id="swap-val">--%</span>
         </div>
         <div class="status-row">
-          <span class="label">Available</span>
+          <span class="label">Còn trống</span>
           <span class="value" id="mem-avail">--</span>
         </div>
       </div>
     </div>
 
-    <!-- Disk -->
+    <!-- Ổ đĩa -->
     <div class="card">
-      <div class="card-title">💾 Disk</div>
+      <div class="card-title">💾 Ổ Đĩa</div>
       <div class="disk-list" id="disk-list"></div>
     </div>
 
-    <!-- Network -->
+    <!-- Mạng -->
     <div class="card">
-      <div class="card-title">🌐 Network</div>
+      <div class="card-title">🌐 Mạng</div>
       <div class="net-list" id="net-list"></div>
     </div>
   </div>
 
-  <!-- Charts row -->
+  <!-- Hermes + 9Router -->
+  <div class="grid">
+    <!-- Hermes Agent -->
+    <div class="card">
+      <div class="card-title">🤖 Hermes Agent</div>
+      <div id="hermes-status-row" style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+        <span id="hermes-dot" style="width:10px;height:10px;border-radius:50%;background:var(--text-dim)"></span>
+        <span id="hermes-status" style="font-weight:600">--</span>
+        <span id="hermes-port" style="font-size:0.75rem;color:var(--text-dim);margin-left:auto">:--</span>
+      </div>
+      <div class="status-row"><span class="label">Mô tả</span><span class="value" id="hermes-desc">--</span></div>
+      <div class="status-row"><span class="label">PID</span><span class="value" id="hermes-pid">--</span></div>
+      <div class="status-row"><span class="label">RAM</span><span class="value" id="hermes-mem">--</span></div>
+      <div class="status-row"><span class="label">RAM Cao nhất</span><span class="value" id="hermes-mem-peak">--</span></div>
+      <div class="status-row"><span class="label">CPU</span><span class="value" id="hermes-cpu">--</span></div>
+      <div class="status-row"><span class="label">Tiến trình con</span><span class="value" id="hermes-children">--</span></div>
+      <div class="status-row"><span class="label">Thời gian chạy</span><span class="value" id="hermes-uptime">--</span></div>
+      <div style="margin-top:12px">
+        <div style="font-size:0.75rem;color:var(--text-dim);margin-bottom:6px">Tiến trình con:</div>
+        <div id="hermes-child-list" style="font-size:0.75rem;color:var(--text-dim);max-height:80px;overflow-y:auto"></div>
+      </div>
+      <div style="margin-top:8px">
+        <div style="font-size:0.75rem;color:var(--text-dim);margin-bottom:6px">Log gần nhất:</div>
+        <div id="hermes-logs" style="font-size:0.7rem;color:var(--text-dim);max-height:100px;overflow-y:auto;font-family:monospace"></div>
+      </div>
+    </div>
+
+    <!-- 9Router -->
+    <div class="card">
+      <div class="card-title">🔀 9Router AI Gateway</div>
+      <div id="router-status-row" style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+        <span id="router-dot" style="width:10px;height:10px;border-radius:50%;background:var(--text-dim)"></span>
+        <span id="router-status" style="font-weight:600">--</span>
+        <span id="router-port" style="font-size:0.75rem;color:var(--text-dim);margin-left:auto">:--</span>
+      </div>
+      <div class="status-row"><span class="label">Mô tả</span><span class="value" id="router-desc">--</span></div>
+      <div class="status-row"><span class="label">PID</span><span class="value" id="router-pid">--</span></div>
+      <div class="status-row"><span class="label">RAM</span><span class="value" id="router-mem">--</span></div>
+      <div class="status-row"><span class="label">RAM Cao nhất</span><span class="value" id="router-mem-peak">--</span></div>
+      <div class="status-row"><span class="label">CPU</span><span class="value" id="router-cpu">--</span></div>
+      <div class="status-row"><span class="label">Tiến trình con</span><span class="value" id="router-children">--</span></div>
+      <div class="status-row"><span class="label">Thời gian chạy</span><span class="value" id="router-uptime">--</span></div>
+      <div style="margin-top:12px">
+        <div style="display:flex;gap:16px;font-size:0.8rem">
+          <span style="color:var(--green)">✅ <span id="router-success">0</span> thành công</span>
+          <span style="color:var(--red)">❌ <span id="router-errors">0</span> lỗi</span>
+          <span style="color:var(--yellow)">⏳ <span id="router-pending">0</span> đang xử lý</span>
+        </div>
+      </div>
+      <div style="margin-top:8px">
+        <div style="font-size:0.75rem;color:var(--text-dim);margin-bottom:6px">Providers:</div>
+        <div id="router-providers" style="font-size:0.75rem;color:var(--cyan);display:flex;flex-wrap:wrap;gap:6px"></div>
+      </div>
+      <div style="margin-top:8px">
+        <div style="font-size:0.75rem;color:var(--text-dim);margin-bottom:6px">Log gần nhất:</div>
+        <div id="router-logs" style="font-size:0.7rem;color:var(--text-dim);max-height:100px;overflow-y:auto;font-family:monospace"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Biểu đồ -->
   <div class="two-col">
     <div class="card">
-      <div class="card-title">📊 CPU & Memory History</div>
+      <div class="card-title">📊 Lịch sử CPU & RAM</div>
       <div class="chart-container tall">
         <canvas id="historyChart"></canvas>
       </div>
     </div>
     <div class="card">
-      <div class="card-title">📈 Network I/O (bytes/s)</div>
+      <div class="card-title">📈 Lưu lượng Mạng (byte/s)</div>
       <div class="chart-container tall">
         <canvas id="netChart"></canvas>
       </div>
     </div>
   </div>
 
-  <!-- System info -->
+  <!-- Thông tin hệ thống -->
   <div class="card" style="margin-top:20px">
-    <div class="card-title">⚙️ System Info</div>
+    <div class="card-title">⚙️ Thông Tin Hệ Thống</div>
     <div class="two-col" style="gap:40px">
       <div>
-        <div class="status-row"><span class="label">Boot Time</span><span class="value" id="boot-time">--</span></div>
-        <div class="status-row"><span class="label">Processes</span><span class="value" id="proc-count">--</span></div>
-        <div class="status-row"><span class="label">CPU Model</span><span class="value" id="cpu-model">--</span></div>
+        <div class="status-row"><span class="label">Khởi động lúc</span><span class="value" id="boot-time">--</span></div>
+        <div class="status-row"><span class="label">Tiến trình</span><span class="value" id="proc-count">--</span></div>
+        <div class="status-row"><span class="label">CPU</span><span class="value" id="cpu-model">--</span></div>
       </div>
       <div>
-        <div class="status-row"><span class="label">CPU User</span><span class="value" id="cpu-user">--%</span></div>
-        <div class="status-row"><span class="label">CPU System</span><span class="value" id="cpu-sys">--%</span></div>
-        <div class="status-row"><span class="label">CPU IOWait</span><span class="value" id="cpu-io">--%</span></div>
+        <div class="status-row"><span class="label">CPU Người dùng</span><span class="value" id="cpu-user">--%</span></div>
+        <div class="status-row"><span class="label">CPU Hệ thống</span><span class="value" id="cpu-sys">--%</span></div>
+        <div class="status-row"><span class="label">CPU Chờ I/O</span><span class="value" id="cpu-io">--%</span></div>
       </div>
     </div>
   </div>
 </div>
 
 <script>
-// ── Helpers ──────────────────────────────────────────────────────────────────
+// ── Hàm hỗ trợ ──────────────────────────────────────────────────────────────
 
 function fmtBytes(b) {
   if (b === 0) return "0 B";
@@ -296,9 +355,9 @@ function fmtUptime(sec) {
   const h = Math.floor((sec % 86400) / 3600);
   const m = Math.floor((sec % 3600) / 60);
   const parts = [];
-  if (d > 0) parts.push(d + "d");
+  if (d > 0) parts.push(d + " ngày");
   if (h > 0) parts.push(h + "h");
-  parts.push(m + "m");
+  parts.push(m + "p");
   return parts.join(" ");
 }
 
@@ -308,9 +367,9 @@ function pctColor(pct) {
   return "#ef4444";
 }
 
-// ── Charts ───────────────────────────────────────────────────────────────────
+// ── Biểu đồ ──────────────────────────────────────────────────────────────────
 
-const MAX_POINTS = 60; // last 60 seconds
+const MAX_POINTS = 60; // 60 giây gần nhất
 
 const historyCtx = document.getElementById("historyChart").getContext("2d");
 const historyChart = new Chart(historyCtx, {
@@ -329,7 +388,7 @@ const historyChart = new Chart(historyCtx, {
         borderWidth: 2,
       },
       {
-        label: "Memory %",
+        label: "RAM %",
         data: [],
         borderColor: "#a855f7",
         backgroundColor: "rgba(168,85,247,0.1)",
@@ -366,7 +425,7 @@ const netChart = new Chart(netCtx, {
     labels: [],
     datasets: [
       {
-        label: "Sent (B/s)",
+        label: "Gửi (B/s)",
         data: [],
         borderColor: "#3b82f6",
         backgroundColor: "rgba(59,130,246,0.1)",
@@ -376,7 +435,7 @@ const netChart = new Chart(netCtx, {
         borderWidth: 2,
       },
       {
-        label: "Recv (B/s)",
+        label: "Nhận (B/s)",
         data: [],
         borderColor: "#22c55e",
         backgroundColor: "rgba(34,197,94,0.1)",
@@ -409,13 +468,13 @@ const netChart = new Chart(netCtx, {
   },
 });
 
-// ── State ────────────────────────────────────────────────────────────────────
+// ── Trạng thái ────────────────────────────────────────────────────────────────
 
 let prevNetSent = 0;
 let prevNetRecv = 0;
 let firstNet = true;
 
-// ── Update ───────────────────────────────────────────────────────────────────
+// ── Cập nhật ──────────────────────────────────────────────────────────────────
 
 function update(data) {
   const cpu = data.cpu;
@@ -428,12 +487,12 @@ function update(data) {
   document.getElementById("cpu-pct").textContent = cpu.percent.toFixed(1) + "%";
   document.getElementById("cpu-pct").style.color = pctColor(cpu.percent);
   document.getElementById("cpu-sub").textContent =
-    `${cpu.count} cores · ${cpu.freq_current.toFixed(0)} MHz · Load: ${cpu.load_avg_1m.toFixed(2)} / ${cpu.load_avg_5m.toFixed(2)} / ${cpu.load_avg_15m.toFixed(2)}`;
+    `${cpu.count} nhân · ${cpu.freq_current.toFixed(0)} MHz · Tải: ${cpu.load_avg_1m.toFixed(2)} / ${cpu.load_avg_5m.toFixed(2)} / ${cpu.load_avg_15m.toFixed(2)}`;
   const cpuBar = document.getElementById("cpu-bar");
   cpuBar.style.width = cpu.percent + "%";
   cpuBar.style.background = pctColor(cpu.percent);
 
-  // Per-core
+  // Từng nhân CPU
   const coresEl = document.getElementById("cpu-cores");
   coresEl.innerHTML = cpu.per_cpu.map((p, i) =>
     `<div class="core-item">
@@ -442,18 +501,18 @@ function update(data) {
     </div>`
   ).join("");
 
-  // Memory
+  // RAM
   document.getElementById("mem-pct").textContent = mem.percent.toFixed(1) + "%";
   document.getElementById("mem-pct").style.color = pctColor(mem.percent);
   document.getElementById("mem-sub").textContent =
-    `${fmtBytes(mem.used)} / ${fmtBytes(mem.total)} used`;
+    `${fmtBytes(mem.used)} / ${fmtBytes(mem.total)} đã dùng`;
   const memBar = document.getElementById("mem-bar");
   memBar.style.width = mem.percent + "%";
   memBar.style.background = pctColor(mem.percent);
   document.getElementById("swap-val").textContent = mem.swap_percent.toFixed(1) + "% (" + fmtBytes(mem.swap_used) + ")";
   document.getElementById("mem-avail").textContent = fmtBytes(mem.available);
 
-  // Disk
+  // Ổ đĩa
   document.getElementById("disk-list").innerHTML = disk.partitions.map(p => `
     <div class="disk-item">
       <div class="disk-label">
@@ -463,34 +522,34 @@ function update(data) {
       <div class="progress-bar">
         <div class="progress-fill" style="width:${p.percent}%;background:${pctColor(p.percent)}"></div>
       </div>
-      <div class="metric-sub">${fmtBytes(p.used)} / ${fmtBytes(p.total)} · Free: ${fmtBytes(p.free)}</div>
+      <div class="metric-sub">${fmtBytes(p.used)} / ${fmtBytes(p.total)} · Trống: ${fmtBytes(p.free)}</div>
     </div>
   `).join("");
 
-  // Network
+  // Mạng
   document.getElementById("net-list").innerHTML = Object.entries(net.interfaces).map(([iface, info]) => `
     <div class="net-item">
       <div class="net-label">
         <span class="iface">${iface}</span>
-        <span class="ips">${info.ips.join(", ") || "no IP"}</span>
+        <span class="ips">${info.ips.join(", ") || "không có IP"}</span>
       </div>
       <div class="net-bytes">
-        <span class="sent">↑ ${fmtBytes(info.bytes_sent)}</span>
-        <span class="recv">↓ ${fmtBytes(info.bytes_recv)}</span>
+        <span class="sent">↑ Gửi: ${fmtBytes(info.bytes_sent)}</span>
+        <span class="recv">↓ Nhận: ${fmtBytes(info.bytes_recv)}</span>
       </div>
     </div>
   `).join("");
 
-  // System
-  document.getElementById("uptime").textContent = "Uptime: " + fmtUptime(sys.uptime_seconds);
-  document.getElementById("boot-time").textContent = new Date(sys.boot_time).toLocaleString();
+  // Hệ thống
+  document.getElementById("uptime").textContent = "Thời gian chạy: " + fmtUptime(sys.uptime_seconds);
+  document.getElementById("boot-time").textContent = new Date(sys.boot_time).toLocaleString("vi-VN");
   document.getElementById("proc-count").textContent = sys.process_count;
   document.getElementById("cpu-user").textContent = cpu.times.user.toFixed(1) + "%";
   document.getElementById("cpu-sys").textContent = cpu.times.system.toFixed(1) + "%";
   document.getElementById("cpu-io").textContent = cpu.times.iowait.toFixed(1) + "%";
 
-  // History chart
-  const now = new Date().toLocaleTimeString();
+  // Biểu đồ lịch sử
+  const now = new Date().toLocaleTimeString("vi-VN");
   historyChart.data.labels.push(now);
   historyChart.data.datasets[0].data.push(cpu.percent);
   historyChart.data.datasets[1].data.push(mem.percent);
@@ -500,7 +559,7 @@ function update(data) {
   }
   historyChart.update("none");
 
-  // Network chart (rate)
+  // Biểu đồ mạng (tốc độ)
   if (!firstNet) {
     const sentRate = Math.max(0, net.total_sent - prevNetSent);
     const recvRate = Math.max(0, net.total_recv - prevNetRecv);
@@ -516,9 +575,88 @@ function update(data) {
   prevNetSent = net.total_sent;
   prevNetRecv = net.total_recv;
   firstNet = false;
+
+  // ── Hermes Agent ──────────────────────────────────────────────────────────
+  const hermes = data.hermes || {};
+  const hermesDot = document.getElementById("hermes-dot");
+  const hermesStatus = document.getElementById("hermes-status");
+  hermesStatus.textContent = hermes.status || "không rõ";
+  hermesDot.style.background = hermes.active ? "var(--green)" : (hermes.status === "lỗi" ? "var(--red)" : "var(--yellow)");
+  document.getElementById("hermes-port").textContent = hermes.port ? ":" + hermes.port : ":--";
+  document.getElementById("hermes-desc").textContent = hermes.description || "--";
+  document.getElementById("hermes-pid").textContent = hermes.pid || "--";
+  document.getElementById("hermes-mem").textContent = hermes.memory_bytes ? fmtBytes(hermes.memory_bytes) : "--";
+  document.getElementById("hermes-mem-peak").textContent = hermes.memory_peak_bytes ? fmtBytes(hermes.memory_peak_bytes) : "--";
+  document.getElementById("hermes-cpu").textContent = hermes.cpu_seconds ? hermes.cpu_seconds.toFixed(1) + "s" : "--";
+  document.getElementById("hermes-children").textContent = hermes.child_count ? hermes.child_count + " tiến trình" : "--";
+  document.getElementById("hermes-uptime").textContent = hermes.uptime_seconds ? fmtUptime(hermes.uptime_seconds) : "--";
+
+  // Hermes child processes
+  const childList = document.getElementById("hermes-child-list");
+  if (hermes.children && hermes.children.length > 0) {
+    childList.innerHTML = hermes.children.map(c =>
+      `<div style="display:flex;justify-content:space-between;padding:2px 0">
+        <span>${c.name} (PID ${c.pid})</span>
+        <span>${c.memory_mb} MB · CPU ${c.cpu_percent}%</span>
+      </div>`
+    ).join("");
+  } else {
+    childList.innerHTML = "<div>Không có dữ liệu</div>";
+  }
+
+  // Hermes logs
+  const hermesLogs = document.getElementById("hermes-logs");
+  if (hermes.recent_logs && hermes.recent_logs.length > 0) {
+    hermesLogs.innerHTML = hermes.recent_logs.map(l =>
+      `<div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:1px 0">${l}</div>`
+    ).join("");
+  } else {
+    hermesLogs.innerHTML = "<div>Không có log</div>";
+  }
+
+  // ── 9Router ───────────────────────────────────────────────────────────────
+  const router = data.router9 || {};
+  const routerDot = document.getElementById("router-dot");
+  const routerStatus = document.getElementById("router-status");
+  routerStatus.textContent = router.status || "không rõ";
+  routerDot.style.background = router.active ? "var(--green)" : (router.status === "lỗi" ? "var(--red)" : "var(--yellow)");
+  document.getElementById("router-port").textContent = router.port ? ":" + router.port : ":--";
+  document.getElementById("router-desc").textContent = router.description || "--";
+  document.getElementById("router-pid").textContent = router.pid || "--";
+  document.getElementById("router-mem").textContent = router.memory_bytes ? fmtBytes(router.memory_bytes) : "--";
+  document.getElementById("router-mem-peak").textContent = router.memory_peak_bytes ? fmtBytes(router.memory_peak_bytes) : "--";
+  document.getElementById("router-cpu").textContent = router.cpu_seconds ? router.cpu_seconds.toFixed(1) + "s" : "--";
+  document.getElementById("router-children").textContent = router.child_count ? router.child_count + " tiến trình" : "--";
+  document.getElementById("router-uptime").textContent = router.uptime_seconds ? fmtUptime(router.uptime_seconds) : "--";
+
+  // 9Router stats
+  const stats = router.stats || {};
+  document.getElementById("router-success").textContent = stats.success_count || 0;
+  document.getElementById("router-errors").textContent = stats.error_count || 0;
+  document.getElementById("router-pending").textContent = stats.pending_count || 0;
+
+  // 9Router providers
+  const provEl = document.getElementById("router-providers");
+  if (router.active_providers && router.active_providers.length > 0) {
+    provEl.innerHTML = router.active_providers.map(p =>
+      `<span style="background:rgba(6,182,212,0.15);padding:2px 8px;border-radius:4px">${p}</span>`
+    ).join("");
+  } else {
+    provEl.innerHTML = "<span>Không rõ</span>";
+  }
+
+  // 9Router logs
+  const routerLogs = document.getElementById("router-logs");
+  if (router.recent_logs && router.recent_logs.length > 0) {
+    routerLogs.innerHTML = router.recent_logs.map(l =>
+      `<div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:1px 0">${l}</div>`
+    ).join("");
+  } else {
+    routerLogs.innerHTML = "<div>Không có log</div>";
+  }
 }
 
-// ── Polling ──────────────────────────────────────────────────────────────────
+// ── Lấy dữ liệu ──────────────────────────────────────────────────────────────
 
 async function fetchMetrics() {
   try {
@@ -526,7 +664,7 @@ async function fetchMetrics() {
     const data = await res.json();
     update(data);
   } catch (e) {
-    console.error("Fetch error:", e);
+    console.error("Lỗi lấy dữ liệu:", e);
   }
 }
 
