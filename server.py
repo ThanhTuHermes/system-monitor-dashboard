@@ -12,6 +12,7 @@ from datetime import datetime
 
 # ── Lấy thông tin service systemd ─────────────────────────────────────────────
 
+
 def get_service_info(service_name):
     """Lấy thông tin service từ systemctl."""
     info = {
@@ -34,7 +35,9 @@ def get_service_info(service_name):
         # systemctl status
         result = subprocess.run(
             ["systemctl", "status", service_name, "--no-pager", "-l"],
-            capture_output=True, text=True, timeout=5
+            capture_output=True,
+            text=True,
+            timeout=5,
         )
         lines = result.stdout.split("\n")
 
@@ -77,7 +80,9 @@ def get_service_info(service_name):
                     ago_part = line.split(";")[1].strip() if ";" in line else ""
                     info["started_at"] = since_part
                     if "ago" in ago_part:
-                        info["uptime_seconds"] = _parse_uptime(ago_part.replace(" ago", ""))
+                        info["uptime_seconds"] = _parse_uptime(
+                            ago_part.replace(" ago", "")
+                        )
                 except Exception:
                     pass
 
@@ -105,11 +110,24 @@ def get_hermes_info():
     # Parse journal log gần nhất
     try:
         result = subprocess.run(
-            ["journalctl", "-u", "hermes", "--no-pager", "--since", "10 min ago",
-             "-o", "short-iso", "--output-fields=MESSAGE"],
-            capture_output=True, text=True, timeout=5
+            [
+                "journalctl",
+                "-u",
+                "hermes",
+                "--no-pager",
+                "--since",
+                "10 min ago",
+                "-o",
+                "short-iso",
+                "--output-fields=MESSAGE",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=5,
         )
-        info["recent_logs"] = result.stdout.strip().split("\n")[-10:] if result.stdout.strip() else []
+        info["recent_logs"] = (
+            result.stdout.strip().split("\n")[-10:] if result.stdout.strip() else []
+        )
     except Exception:
         info["recent_logs"] = []
 
@@ -122,12 +140,14 @@ def get_hermes_info():
             for c in children:
                 try:
                     mem = c.memory_info()
-                    info["children"].append({
-                        "pid": c.pid,
-                        "name": c.name(),
-                        "memory_mb": round(mem.rss / 1024 / 1024, 1),
-                        "cpu_percent": c.cpu_percent(interval=0),
-                    })
+                    info["children"].append(
+                        {
+                            "pid": c.pid,
+                            "name": c.name(),
+                            "memory_mb": round(mem.rss / 1024 / 1024, 1),
+                            "cpu_percent": c.cpu_percent(interval=0),
+                        }
+                    )
                 except (psutil.NoSuchProcess, psutil.AccessDenied):
                     pass
         except (psutil.NoSuchProcess, psutil.AccessDenied):
@@ -145,7 +165,9 @@ def get_9router_info():
     try:
         result = subprocess.run(
             ["journalctl", "-u", "9router", "--no-pager", "--since", "5 min ago"],
-            capture_output=True, text=True, timeout=5
+            capture_output=True,
+            text=True,
+            timeout=5,
         )
         logs = result.stdout.strip().split("\n") if result.stdout.strip() else []
 
@@ -170,7 +192,11 @@ def get_9router_info():
                 prov = l.split("provider=")[1].split("|")[0].split()[0].strip()
                 providers.add(prov)
             elif "[ROUTING]" in l:
-                prov = l.split("[ROUTING]")[1].split("→")[0].strip().split("/")[-1] if "→" in l else ""
+                prov = (
+                    l.split("[ROUTING]")[1].split("→")[0].strip().split("/")[-1]
+                    if "→" in l
+                    else ""
+                )
                 if prov:
                     providers.add(prov)
         info["active_providers"] = list(providers)
@@ -242,6 +268,7 @@ def _parse_uptime(s):
 
 # ── Thu thập tất cả metrics ────────────────────────────────────────────────────
 
+
 def get_metrics():
     # CPU
     cpu_percent = psutil.cpu_percent(interval=0)
@@ -260,15 +287,17 @@ def get_metrics():
     for part in psutil.disk_partitions():
         try:
             usage = psutil.disk_usage(part.mountpoint)
-            disk_partitions.append({
-                "device": part.device,
-                "mountpoint": part.mountpoint,
-                "fstype": part.fstype,
-                "total": usage.total,
-                "used": usage.used,
-                "free": usage.free,
-                "percent": usage.percent,
-            })
+            disk_partitions.append(
+                {
+                    "device": part.device,
+                    "mountpoint": part.mountpoint,
+                    "fstype": part.fstype,
+                    "total": usage.total,
+                    "used": usage.used,
+                    "free": usage.free,
+                    "percent": usage.percent,
+                }
+            )
         except PermissionError:
             pass
 
@@ -325,8 +354,16 @@ def get_metrics():
         "disk": {
             "partitions": disk_partitions,
             "io": {
-                "read_bytes": psutil.disk_io_counters().read_bytes if psutil.disk_io_counters() else 0,
-                "write_bytes": psutil.disk_io_counters().write_bytes if psutil.disk_io_counters() else 0,
+                "read_bytes": (
+                    psutil.disk_io_counters().read_bytes
+                    if psutil.disk_io_counters()
+                    else 0
+                ),
+                "write_bytes": (
+                    psutil.disk_io_counters().write_bytes
+                    if psutil.disk_io_counters()
+                    else 0
+                ),
             },
         },
         "network": {
@@ -347,6 +384,7 @@ def get_metrics():
 
 
 # ── HTTP Handler ─────────────────────────────────────────────────────────────
+
 
 class DashboardHandler(SimpleHTTPRequestHandler):
     """Phục vụ index.html + /api/metrics."""
